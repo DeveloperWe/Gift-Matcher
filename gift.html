@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiftMatch AI - Phase 1 Prototype</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #2563eb;
+            --accent-hover: #3b82f6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+        .container { max-width: 1100px; margin: 0 auto; }
+        header { text-align: center; margin-bottom: 30px; }
+        h1 { margin-bottom: 5px; color: var(--text-main); }
+        .grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; }
+        @media (max-width: 850px) { .grid { grid-template-columns: 1fr; } }
+        .card { background-color: var(--card-bg); border-radius: 8px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        h3 { margin-top: 0; border-bottom: 1px solid #334155; padding-bottom: 8px; color: var(--text-main); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9rem; }
+        select, input, textarea {
+            width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; 
+            border-radius: 6px; color: white; box-sizing: border-box; font-size: 0.95rem;
+        }
+        select:focus, input:focus, textarea:focus { border-color: var(--accent); outline: none; }
+        .btn {
+            width: 100%; padding: 12px; background: var(--accent); color: white; border: none;
+            border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: background 0.2s;
+        }
+        .btn:hover { background: var(--accent-hover); }
+        .results-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        .gift-card { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; }
+        .gift-tag { display: inline-block; padding: 2px 8px; background: #334155; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-bottom: 8px; max-width: fit-content;}
+        .gift-tag.product { background: #0284c7; }
+        .gift-tag.experience { background: #7c3aed; }
+        .price { font-weight: bold; color: var(--success); font-size: 1.1rem; }
+        .meta-text { font-size: 0.85rem; color: var(--text-muted); margin-top: 5px; }
+        .empty-state { text-align: center; color: var(--text-muted); padding: 40px 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🎁 GiftMatch Engine Prototype</h1>
+        <p style="color: var(--text-muted); margin-top: 5px;">Phase 1: Functional Frontend Logic & Simulated Data Matrix</p>
+    </header>
+
+    <div class="grid">
+        <!-- Profile Inputs & Wizard -->
+        <div class="card">
+            <h3>Recipient DNA Inputs</h3>
+            <form id="giftForm" onsubmit="event.preventDefault(); matchGifts();">
+                <div class="form-group">
+                    <label for="occasion">Occasion</label>
+                    <select id="occasion">
+                        <option value="birthday">Birthday</option>
+                        <option value="anniversary">Anniversary</option>
+                        <option value="holiday">Holiday/Christmas</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="gender">Gender</label>
+                    <select id="gender">
+                        <option value="any">Any / Unisex</option>
+                        <option value="female">Female</option>
+                        <option value="male">Male</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="budget">Max Budget</label>
+                    <select id="budget">
+                        <option value="25">$25 or less</option>
+                        <option value="100">$25 to $100</option>
+                        <option value="9999">$100+ (Premium)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="hobby">Primary Interest/Hobby</label>
+                    <select id="hobby">
+                        <option value="cooking">Cooking & Culinary</option>
+                        <option value="tech">Technology & Gaming</option>
+                        <option value="fitness">Fitness & Outdoors</option>
+                    </select>
+                </div>
+                
+                <h3>Personalization Clues</h3>
+                <div class="form-group">
+                    <label for="favColor">Favorite Color</label>
+                    <input type="text" id="favColor" placeholder="e.g., Emerald Green, Navy Blue">
+                </div>
+                <div class="form-group">
+                    <label for="pastGifts">Past Successful Gifts</label>
+                    <textarea id="pastGifts" rows="2" placeholder="e.g., Cast iron skillet loved last year"></textarea>
+                </div>
+
+                <button type="submit" class="btn">Generate Best Match Options</button>
+            </form>
+        </div>
+
+        <!-- Real-Time Output Matches -->
+        <div class="card">
+            <h3>Smart Matches Found</h3>
+            <div id="resultsPanel" class="results-grid">
+                <div class="empty-state">Fill out the recipient profile and hit generate to query the match matrix.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Simulated Database Map
+    const giftDatabase = [
+        { name: "Premium Ergonomic Mechanical Keyboard", type: "Product", hobby: "tech", gender: "any", budget: 100, store: "Amazon", link: "#" },
+        { name: "Virtual Reality (VR) Gaming Headset Setup", type: "Product", hobby: "tech", gender: "any", budget: 9999, store: "Best Buy", link: "#" },
+        { name: "Smart RGB LED Room Desk Ambient Lamp Pack", type: "Product", hobby: "tech", gender: "any", budget: 25, store: "Amazon", link: "#" },
+        
+        { name: "High-Heat Professional Chef's Knife", type: "Product", hobby: "cooking", gender: "any", budget: 100, store: "Williams Sonoma", link: "#" },
+        { name: "3-Hour Couples Sushi Making Masterclass", type: "Experience", hobby: "cooking", gender: "any", budget: 9999, store: "Local Culinary Academy", link: "#" },
+        { name: "Organic Herb Garden Indoor Starter Windowsill Kit", type: "Product", hobby: "cooking", gender: "any", budget: 25, store: "Etsy", link: "#" },
+        
+        { name: "Insulated Stainless Steel Water Bottle & Filter", type: "Product", hobby: "fitness", gender: "any", budget: 25, store: "REI", link: "#" },
+        { name: "Deep Tissue Muscle Recovery Massage Gun", type: "Product", hobby: "fitness", gender: "any", budget: 100, store: "Therabody", link: "#" },
+        { name: "Guided Outdoor Rock Climbing Day Trip Voucher", type: "Experience", hobby: "fitness", gender: "any", budget: 9999, store: "Adventure Outposts", link: "#" }
+    ];
+
+    function matchGifts() {
+        const selectedHobby = document.getElementById('hobby').value;
+        const selectedBudget = parseFloat(document.getElementById('budget').value);
+        const favColor = document.getElementById('favColor').value.trim();
+        const resultsPanel = document.getElementById('resultsPanel');
+        
+        // Logical Matching Filter Algorithm
+        let matches = giftDatabase.filter(gift => {
+            const hobbyMatch = gift.hobby === selectedHobby;
+            let budgetMatch = false;
+            if (selectedBudget === 25) budgetMatch = gift.budget <= 25;
+            else if (selectedBudget === 100) budgetMatch = gift.budget > 25 && gift.budget <= 100;
+            else if (selectedBudget === 9999) budgetMatch = gift.budget > 100;
+            
+            return hobbyMatch && budgetMatch;
+        });
+
+        resultsPanel.innerHTML = '';
+
+        if (matches.length === 0) {
+            resultsPanel.innerHTML = `<div class="empty-state">No items matched this exact scope configuration. Try adjusting your budget boundaries.</div>`;
+            return;
+        }
+
+        matches.forEach(gift => {
+            let budgetLabel = gift.budget === 9999 ? "$150+" : `$${gift.budget}`;
+            let colorModifierText = favColor ? `🎨 Customization Tip: Source this item in their favorite style/color: <strong>${favColor}</strong>.` : '';
+            
+            const card = document.createElement('div');
+            card.className = 'gift-card';
+            card.innerHTML = `
+                <div>
+                    <span class="gift-tag ${gift.type.toLowerCase()}">${gift.type.toUpperCase()}</span>
+                    <div style="font-weight: bold; font-size: 1.1rem; margin-bottom: 5px;">${gift.name}</div>
+                    <div class="meta-text">Where to source: <strong>${gift.store}</strong></div>
+                    <div class="meta-text" style="color: #60a5fa; margin-top:8px;">${colorModifierText}</div>
+                </div>
+                <div style="display:flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid #334155; padding-top: 10px;">
+                    <span class="price">${budgetLabel}</span>
+                    <a href="${gift.link}" target="_blank" class="meta-text" style="color: var(--accent-hover); text-decoration: none; font-weight:bold;">View Vendor Outlet →</a>
+                </div>
+            `;
+            resultsPanel.appendChild(card);
+        });
+    }
+</script>
+</body>
+</html>
