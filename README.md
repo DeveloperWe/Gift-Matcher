@@ -1,4 +1,4 @@
-# GiftMatch AI 🎁
+# GiftMatcher 🎁
 
 GiftMatch AI is a lightweight, single-page gift recommendation prototype that helps users discover gift ideas based on a recipient's occasion, budget, interests, and personalization clues.
 
